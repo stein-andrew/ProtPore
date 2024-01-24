@@ -14,7 +14,7 @@ cimport numpy as np
 from libc.math cimport log
 cimport cython
 
-from itertools import tee, izip, chain
+from itertools import tee, zip_longest, chain
 from core import Segment
 
 # Implement the max and min functions as cython
@@ -40,7 +40,7 @@ cdef inline double var_c( int start, int end, double [:] c, double [:] c2 ):
 def pairwise(iterable):
 	a, b = tee(iterable)
 	next(b, None)
-	return izip(a, b)
+	return zip(a, b)
 
 cdef class FastStatSplit:
 	'''
@@ -144,7 +144,7 @@ cdef class FastStatSplit:
 
 		var_summed = end * log( var_c( 0, end, self.c, self.c2))
 		
-		for i in xrange( 2, end-2):
+		for i in range( 2, end-2):
 			low_var_summed = i * log( var_c( 0, i, self.c, self.c2 ) )
 			high_var_summed = ( end-i ) * log( var_c( i, end, self.c, self.c2 ) )
 			gain = var_summed-( low_var_summed+high_var_summed )
@@ -168,7 +168,7 @@ cdef class FastStatSplit:
 		cdef int i, x = -1
 		cdef double low_var_summed, high_var_summed, gain
 
-		for i in xrange( start+self.min_width, end+1-self.min_width ):
+		for i in range( start+self.min_width, end+1-self.min_width ):
 			low_var_summed = ( i-start ) * log( var_c( start, i, self.c, self.c2 ) )
 			high_var_summed = ( end-i ) * log( var_c( i, end, self.c, self.c2 ) )
 			gain = var_summed-( low_var_summed+high_var_summed )
@@ -185,7 +185,7 @@ cdef class FastStatSplit:
 
 		cdef int pseudostart, pseudoend, split_at = -1
 
-		for pseudostart in xrange( start, end-2*self.min_width, self.window_width//2 ):
+		for pseudostart in range( start, end-2*self.min_width, self.window_width//2 ):
 			if pseudostart > start + self.max_width:
 				split_at = int_min( start+self.max_width, end-self.min_width )
 				return [ split_at ] + self._recursive_split( split_at, end )
@@ -230,7 +230,7 @@ cdef class FastStatSplit:
 		cdef double low_var_summed, high_var_summed, gain
 		cdef np.ndarray score = np.zeros( len(self.c) )
 
-		for i in xrange( start+self.min_width, end+1-self.min_width ):
+		for i in range( start+self.min_width, end+1-self.min_width ):
 			low_var_summed = ( i-start ) * log( var_c( start, i, self.c, self.c2 ) )
 			high_var_summed = ( end-i ) * log( var_c( i, end, self.c, self.c2 ) )
 			gain = var_summed-( low_var_summed+high_var_summed )
@@ -254,7 +254,7 @@ cdef class FastStatSplit:
 			split_at, score = self._best_split_stepwise_score( start, end )
 			return list(score) 
 
-		for pseudostart in xrange( start, end-2*self.min_width, self.window_width//2 ):
+		for pseudostart in range( start, end-2*self.min_width, self.window_width//2 ):
 			if pseudostart > start + self.max_width:
 				split_at = int_min( start+self.max_width, end-self.min_width )
 				return scores + self._recursive_split_scoring( split_at, end, 0 )

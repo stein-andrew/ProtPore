@@ -2345,16 +2345,16 @@ cdef class Model(object):
 					self.graph.remove_node( prestates[i] )
 
 					if verbose:
-						print "Orphan state {} removed due to no edges \
-							leading to it".format(prestates[i].name )
+						print ("Orphan state {} removed due to no edges \
+							leading to it".format(prestates[i].name ))
 
 				elif self.out_edge_count[i] == 0:
 					merge_count += 1
 					self.graph.remove_node( prestates[i] )
 
 					if verbose:
-						print "Orphan state {} removed due to no edges \
-							leaving it".format(prestates[i].name )
+						print ("Orphan state {} removed due to no edges \
+							leaving it".format(prestates[i].name ))
 
 			if merge_count == 0:
 				break
@@ -2371,8 +2371,8 @@ cdef class Model(object):
 			if out_edges != 1. and state != self.end:
 				# Issue a notice if verbose is activated
 				if verbose:
-					print "{} : {} summed to {}, normalized to 1.0"\
-						.format( self.name, state.name, out_edges )
+					print ("{} : {} summed to {}, normalized to 1.0"\
+						.format( self.name, state.name, out_edges ))
 
 				# Reweight the edges so that the probability (not logp) sums
 				# to 1.
@@ -2421,8 +2421,8 @@ cdef class Model(object):
 
 								# Log the event
 								if verbose:
-									print "{} : {} - {} merged".format(
-										self.name, a, b)
+									print ("{} : {} - {} merged".format(
+										self.name, a, b))
 
 						# Remove the state now that all edges are removed
 						self.graph.remove_node( a )
@@ -2436,7 +2436,7 @@ cdef class Model(object):
 		for a, b, e in self.graph.edges( data=True ):
 			for x, y, d in self.graph.edges( data=True ):
 				if a is y and b is x and a.is_silent() and b.is_silent():
-					print "Loop: {} - {}".format( a.name, b.name )
+					print ("Loop: {} - {}".format( a.name, b.name ))
 
 		states = self.graph.nodes()
 		n, m = len(states), len(self.graph.edges())
@@ -3238,7 +3238,7 @@ cdef class Model(object):
 		
 		# Is the sequence impossible? If so, don't bother calculating any more.
 		if log_sequence_probability == NEGINF:
-			print( "Warning: Sequence is impossible." )
+			print(( "Warning: Sequence is impossible." ))
 			return ( None, None )
 
 		for k in xrange( m ):
@@ -3696,7 +3696,7 @@ cdef class Model(object):
 		
 		# Is the sequence impossible? If so, don't bother calculating any more.
 		if log_sequence_probability == NEGINF:
-			print( "Warning: Sequence is impossible." )
+			print(( "Warning: Sequence is impossible." ))
 			return ( None, None )
 
 		for k in xrange( m ):				
@@ -4025,7 +4025,7 @@ cdef class Model(object):
 		improvement = trained_log_probability_sum - log_probability_sum
 
 		if verbose:
-			print "Total Training Improvement: ", improvement
+			print ("Total Training Improvement: ", improvement)
 		return improvement
 
 	def _train_baum_welch(self, sequences, stop_threshold, min_iterations, 

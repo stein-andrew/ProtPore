@@ -645,7 +645,7 @@ class FilterDerivativeSegmenter( parser ):
         # threshold, with a maximum of one per block 
         split_points = [0] 
 
-        for start, end in it.izip( tics[:-1:2], tics[1::2] ): # For all pairs of edges for a block..
+        for start, end in itertools.zip_longest( tics[:-1:2], tics[1::2] ): # For all pairs of edges for a block..
             segment = deriv[ start:end ] # Save all derivatives in that block to a segment
             if np.argmax( segment ) > self.high_threshold: # If the maximum derivative in that block is above a threshold..
                 split_points = np.concatenate( ( split_points, [ start, end ] ) ) # Save the edges of the segment 

@@ -31,7 +31,7 @@ from PyPore.alignment import *
                  
 import json
 import time
-from itertools import chain, izip, tee, combinations
+from itertools import chain, zip_longest, tee, combinations
 import itertools as it
 import re
 
