@@ -63,6 +63,7 @@ pymysql.install_as_MySQLdb()
 import MySQLdb
 import itertools as it
 
+import datetime
 class Database( object ):
     '''
     Represents a SQL database. 
@@ -127,11 +128,11 @@ class Table( object ):
 
     @property
     def column_names( self ):
-        return [x[0] for x in self.columns]
+        return map( lambda x: x[0], self.columns )
 
     @property
     def column_types( self ):
-        return [x[1] for x in self.columns]
+        return map( lambda x: x[1], self.columns )
 
     def read( self, columns=None, values=None ):
         '''

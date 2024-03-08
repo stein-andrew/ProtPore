@@ -6,7 +6,7 @@
 # This program will read in an abf file using read_abf.py and
 # pull out the events, saving them as text files.
 
-
+from __future__ import division, print_function
 import sys
 from itertools import tee,chain
 import re
@@ -15,11 +15,11 @@ import PyPore
 import time
 import numpy as np
 try:
-    from PyQt4 import QtGui as Qt
-    from PyQt4 import QtCore as Qc
+    from PyQt5 import QtGui as Qt
+    from PyQt5 import QtCore as Qc
 except:
     pass
-from .core import *
+from PyPore.core import *
 
 import pyximport
 pyximport.install( setup_args={'include_dirs':np.get_include()})
@@ -40,7 +40,7 @@ class parser( object ):
         return self.to_json()
 
     def to_dict( self ):
-        d = { key: val for key, val in list(self.__dict__.items()) if key != 'param_dict'
+        d = { key: val for key, val in self.__dict__.items() if key != 'param_dict'
                                                              if type(val) in (int, float)
                                                                     or ('Qt' not in repr(val) )
                                                                     and 'lambda' not in repr(val) }
@@ -80,7 +80,7 @@ class parser( object ):
         corresponding to that value.
         '''
         try:
-            for key, lineEdit in list(self.param_dict.items()):
+            for key, lineEdit in self.param_dict.items():
                 val = lineEdit.text()
                 if '.' in val:
                     setattr( self, key, float( val ) )
@@ -156,7 +156,7 @@ class lambda_event_parser( parser ):
     
     def GUI( self ):
         '''
-        Override the default GUI for use in the Abada GUI, allowing for customization of the rules and threshol via
+        Override the default GUI for use in the Abada GUI, allowing for customization of the rules and threshold via
         the GUI. 
         '''
         threshDefault, timeDefault = "90", "1"
@@ -215,7 +215,7 @@ def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
-    return list(zip(a, b))
+    return zip(a, b)
 
 class StatSplit( parser ):
     """
@@ -508,7 +508,7 @@ class SpeedyStatSplit( parser ):
     wrapper for the cyton implementation to add a GUI.
     '''
 
-    def __init__( self, min_width=100, max_width=1000000, window_width=10000, 
+    def __init__( self, min_width=100, max_width=1000000, window_width=10000,
         min_gain_per_sample=None, false_positive_rate=None,
         prior_segments_per_second=None, sampling_freq=1.e5, cutoff_freq=None ):
 
@@ -522,7 +522,7 @@ class SpeedyStatSplit( parser ):
         self.cutoff_freq = cutoff_freq
 
     def parse( self, current ):
-        parser = FastStatSplit( self.min_width, self.max_width, 
+        parser = FastStatSplit( self.min_width, self.max_width,
             self.window_width, self.min_gain_per_sample, self.false_positive_rate,
             self.prior_segments_per_second, self.sampling_freq, self.cutoff_freq )
         return parser.parse( current )
@@ -645,13 +645,13 @@ class FilterDerivativeSegmenter( parser ):
         # threshold, with a maximum of one per block 
         split_points = [0] 
 
-        for start, end in itertools.zip_longest( tics[:-1:2], tics[1::2] ): # For all pairs of edges for a block..
+        for start, end in it.zip( tics[:-1:2], tics[1::2] ): # For all pairs of edges for a block..
             segment = deriv[ start:end ] # Save all derivatives in that block to a segment
             if np.argmax( segment ) > self.high_threshold: # If the maximum derivative in that block is above a threshold..
                 split_points = np.concatenate( ( split_points, [ start, end ] ) ) # Save the edges of the segment 
                 # Now you have the edges of all transitions saved, and so the states are the current between these transitions
         tics = np.concatenate( ( split_points, [ current.shape[0] ] ) )
-        tics = list(map( int, tics ))
+        tics = map( int, tics )
         return [ Segment( current=current[ tics[i]:tics[i+1] ], start=tics[i] ) 
                     for i in range( 0, len(tics)-1, 2 ) ]
 

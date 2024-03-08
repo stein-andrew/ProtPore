@@ -17,7 +17,7 @@ class MetaSegment( object ):
 	loaded, without the expectation of the array of floats.
 	'''
 	def __init__( self, **kwargs ):
-		for key, value in list(kwargs.items()):
+		for key, value in kwargs.items():
 			with ignored( AttributeError ):
 				setattr( self, key, value )
 
@@ -127,7 +127,7 @@ class Segment( object ):
 		'''
 		self.current = current
 
-		for key, value in list(kwargs.items()):
+		for key, value in kwargs.items():
 			if hasattr( self, key ):
 				continue
 			with ignored( AttributeError ):

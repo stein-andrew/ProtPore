@@ -43,20 +43,20 @@ plt.switch_backend('agg')
 
 def kmer_current_map(file):
     # Read kmer current mean, sd, and time measurements
-    kmer_current_dict = {}
-    kmer_table = open(file, 'r')
-    for line in kmer_table:
-        line = line.strip().split('\t')
-        key = line[0].strip()
-        meanCurrent = float(line[1].strip())
-        stdevCurrent = float(line[2].strip())
-        if not key in kmer_current_dict.keys():
-            kmer_current_dict[key] = 0
-        kmer_current_dict[key] = [meanCurrent, stdevCurrent]
+    kmer_current_dict = {} # Create empty dictionary
+    kmer_table = open(file, 'r') # Open file
+    for line in kmer_table: # Iterate through lines in file
+        line = line.strip().split('\t') # Split line by tab
+        key = line[0].strip() # Key is first element in line
+        meanCurrent = float(line[1].strip()) # Mean current is second element in line
+        stdevCurrent = float(line[2].strip()) # Standard deviation of current is third element in line
+        if not key in kmer_current_dict.keys(): # If key is not in dictionary, add it
+            kmer_current_dict[key] = 0 # Add key to dictionary
+        kmer_current_dict[key] = [meanCurrent, stdevCurrent] # Add mean and stdev to dictionary
 
-    kmer_table.close()
+    kmer_table.close() # Close file
 
-    return kmer_current_dict
+    return kmer_current_dict # Return dictionary
 
 
 ########################################################################
@@ -68,7 +68,7 @@ class HMM_Constructor():
     def __init__(self):
         pass
 
-    def HMM_linear_model(self, kmer_list, kmer_current_dict, model_name=None):
+    def HMM_linear_model(self, kmer_list, kmer_current_dict, model_name=None): # kmer_list is a list of strings, kmer_current_dict is a dictionary
         '''
         This HMM models the segments corresponding to the context and the label
         Each state will have the following transitions:
@@ -79,20 +79,19 @@ class HMM_Constructor():
         '''
         # Create model and add states
         model = yahmm.Model(name=model_name) if not model_name is None \
-            else yahmm.Model(name='HMM_linear_model')
-        previous_skip = None
+            else yahmm.Model(name='HMM_linear_model') # Create model
         previous_short_slip = None
         current_short_slip = None
         previous_mean = 0
         previous_sd = 0
         states_list = []
 
-        for index in range(len(kmer_list)):
+        for index in range(len(kmer_list)): # Iterate through kmer_list
 
             # State name, mean and stdev for the kmer
-            kmer = kmer_list[index]
-            current_mean = kmer_current_dict[kmer][0]
-            current_sd = kmer_current_dict[kmer][1]
+            kmer = kmer_list[index] # Get kmer from kmer_list
+            current_mean = kmer_current_dict[kmer][0] # Get mean from kmer_current_dict
+            current_sd = kmer_current_dict[kmer][1] # Get stdev from kmer_current_dict
             # Transition probabilities for a match state
             # Self-loop to itself
             self_loop = 0.1
@@ -132,30 +131,30 @@ class HMM_Constructor():
 
             # Transitions for the match state
             # Self-loop to itself
-            model.add_transition(current_state, current_state, self_loop)
+            model.add_transition(current_state, current_state, self_loop) # Self-loop for current state
             # The model could end from any match state
             if index < len(kmer_list) - 1:
-                model.add_transition(current_state, model.end, end)
+                model.add_transition(current_state, model.end, end) # Transition from current state to model.end
 
             # Each Match State can go to a silent drop-off state, and then to model.end
             drop_off = yahmm.State(None, name='S_DROPOFF_' + kmer + '_' + str(index))
             model.add_state(drop_off)
             # Transition to drop_off and back, from drop_off to end
-            model.add_transition(current_state, drop_off, drop)
-            model.add_transition(drop_off, current_state, 1.0 - blip_self)
+            model.add_transition(current_state, drop_off, drop) # Transition from current state to drop_off
+            model.add_transition(drop_off, current_state, 1.0 - blip_self) # Transition from drop_off to current state
 
-            model.add_transition(drop_off, model.end, 1.00)
+            model.add_transition(drop_off, model.end, 1.00) # Transition from drop_off to model.end
 
             # Each Match State can go to a Blip State that results from a voltage blip
             # Uniform Distribution with Mean and Variance for the whole event
             blip_state = yahmm.State(yahmm.UniformDistribution(15.0, 120.0), \
                                      name='I_BLIP_' + kmer + '_' + str(index))
             model.add_state(blip_state)
-            # Self-loop for blip_staet
-            model.add_transition(blip_state, blip_state, blip_self)
+            # Self-loop for blip_state
+            model.add_transition(blip_state, blip_state, blip_self) # Self-loop for blip_state
             # Transition to blip_state and back
-            model.add_transition(current_state, blip_state, blip)
-            model.add_transition(blip_state, current_state, 1.0 - blip_self)
+            model.add_transition(current_state, blip_state, blip) # Transition from current state to blip_state
+            model.add_transition(blip_state, current_state, 1.0 - blip_self) # Transition from blip_state to current state
 
             # Short Backslip - can go from 1 to the beginning but favors 1 > ...
             # Starts at state 1 when the first short slip silent state is created
@@ -176,7 +175,7 @@ class HMM_Constructor():
                     model.add_transition(current_short_slip, previous_short_slip, \
                                          1 - step_back)
                 else:
-                    model.add_transition(current_short_slip, states_list[index - 1], 1.00)
+                    model.add_transition(current_short_slip, states_list[index - 1], 1.00) # Transition from current silent short slip state to previous match state
 
             # Create and Add Skip Silent State
             current_skip = yahmm.State(None, name='S_SKIP_' + kmer + '_' + str(index))
@@ -252,11 +251,20 @@ class HMM_Constructor():
 
 
 def model_maker(kmer_current_dict, model_name=None):
-    kmer_list = map(str, range(len(kmer_current_dict)))
-    model = HMM_Constructor().HMM_linear_model(kmer_list, kmer_current_dict, \
-                                               model_name)
+    kmer_list = list(map(str, range(len(kmer_current_dict))))
+    model = None  # Define model variable before try block
+    print(kmer_list) #
+    print(kmer_current_dict)
+    try:
+        model = HMM_Constructor().HMM_linear_model(kmer_list, kmer_current_dict, model_name)
+    except KeyError as e:
+        print(f'KeyError: {e}')
+        print(f'kmer_list: {kmer_list}')
+        print(f'kmer_current_dict: {kmer_current_dict}')
+        # Skip the missing key and continue with the remaining keys
+        kmer_list.remove(str(e))
+        model = HMM_Constructor().HMM_linear_model(kmer_list, kmer_current_dict, model_name)
     return model
-
 
 def prediction(models, sequences, algorithm='forward-backward'):
     # Predict sequence from HMM using a user-specified algorithm
@@ -280,10 +288,10 @@ def plot_event(filename, event, model):
     plt.figure()
     plt.subplot(211)
     plt.grid()
-    event.plot(color='cycle')
+    event.plot(color='cycle', linewidth=0.75)
     plt.subplot(212)
     plt.grid()
-    event.plot(color='hmm', hmm=model, cmap='Set1')
+    event.plot(color='hmm', hmm=model, cmap='Set1', linewidth=0.75)
     #    plt.show()
     plt.tight_layout()
     plt.savefig(fig_name, format='pdf')
@@ -332,7 +340,7 @@ def main(myCommandLine=None):
         parser.print_help()
         sys.exit(0)
 
-    print >> sys.stderr, options
+    print(options, file=sys.stderr)
 
     # fast5 files
     filePath = options.fast5
@@ -344,8 +352,7 @@ def main(myCommandLine=None):
     winWidth = options.win
     label = options.label
 
-    print
-    'creating kmer current map'
+    print('creating kmer current map')
     # CREATE CURRENT MAPS OUT OF MODELPATH
     # kmer_current_dict[index] = [meancurrent, stddev]
     # one dictionary per file where each entry is one line in the file
@@ -370,8 +377,7 @@ def main(myCommandLine=None):
     models = [pro_001_model, pro_002_model, pro_003_model, pro_004_model]
 
     #    models[0].write(sys.stdout)
-    print
-    'models done'
+    print('models done')
 
     # Create blank templates for every model file
     viterbi_prediction = []
@@ -423,6 +429,7 @@ def main(myCommandLine=None):
         try:
             if label == 1:
                 read = (f5File['/Raw/Channel_28/'])
+                print(read)
             #             # Case 1
             #             read = (f5File['/Raw/Channel_28/'])
 
@@ -441,10 +448,11 @@ def main(myCommandLine=None):
             #             # Case 4
             #             read = (f5File['/Raw/Channel_186/'])
 
-            signal = (read['Signal']).value
+            signal = (read['Signal'][:])
+            print(signal)
 
         except:
-            print >> sys.stderr, 'Unsupported data type'
+            print('Unsupported data type', file=sys.stderr)
 
         # Find values to be used for converting current to picoAmperes
         # Create current - numpy array of floats in units pA
@@ -454,7 +462,7 @@ def main(myCommandLine=None):
         sampling_rate = (read['Meta']).attrs['sample_rate']
 
         adjusted_signal = (signal + offset) * (f5range / digitisation)
-        current = numpy.array(adjusted_signal, dtype=numpy.float)
+        current = numpy.array(adjusted_signal, dtype=float)
 
         if label == 1:
             #         # Case 1
@@ -493,7 +501,7 @@ def main(myCommandLine=None):
         # timestep was fADCSequenceInterval * 1e-3 = .01 for .abf
         # Different for .fast5? standard or make use of sampling interval?
         # This is fed into Segmenter as second = 1000/timestep
-        timestep = 0.1
+        timestep = 0.1 # Needs to be optimized to not affect output
         # timestep = 1/sampling_rate
         # sampling_rate = 3012 so would be 0.000332
         # looks weirdly smooth using that, horizontal axis VERY small
@@ -543,13 +551,12 @@ def main(myCommandLine=None):
             # Create list of segment means
             # (also write means/std to create profiles)
             # REMEMBER TO COMMENT OUT WHEN NOT MAKING NEW PROFILE FILES!
-            print
-            filename
+            print(filename)
             new_filename = str(filename.replace('/', '_'))
-            #             writeFile = open('F5_' + new_filename + str(min_gain_per_sample) + '.txt', 'w')
+            writeFile = open('F5_' + new_filename + str(min_gain_per_sample) + '.txt', 'w')
             for segment in event.segments:
                 segment_means.append(segment.mean)
-                #                 writeFile.write(str(count)+'\t'+str(segment.mean)+'\t'+str(segment.std)+'\n')
+                writeFile.write(str(count)+'\t'+str(segment.mean)+'\t'+str(segment.std)+'\n')
                 count += 1
             #             writeFile.close()
 
@@ -559,8 +566,7 @@ def main(myCommandLine=None):
             # Align event to HMM
             pred = prediction(models, sequences, algorithm='viterbi')
             scores = [float(pred[0][0]), float(pred[1][0]), float(pred[2][0]), float(pred[3][0])]
-            print
-            event.start, event.end, scores
+            print(event.start, event.end, scores)
 
             classified_model = scores.index(max(scores))
             if classified_model == 0 and label == 'P_pro001':
@@ -588,7 +594,7 @@ def main(myCommandLine=None):
             print(pred[0][0], pred[1][0], pred[2][0], pred[3][0])
     #     print(pred[classified_model][1])
 
-    print >> sys.stderr, '\ntotal time for the program %.3f' % (time.time() - t0)
+    print('\ntotal time for the program %.3f' % (time.time() - t0), file=sys.stderr)
 
 
 if (__name__ == '__main__'):
