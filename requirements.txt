@@ -1,0 +1,6 @@
+numpy==1.16.6
+matplotlib==2.2.5
+Cython==0.29.21
+networkx==1.11
+PyMySQL==0.9.3
+

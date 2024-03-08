@@ -2154,7 +2154,7 @@ cdef class Model(object):
 
 		# Add the transition
 		self.graph.add_edge(a, b, weight=log(probability),
-			pseudocount=pseudocount, group=group ) # Add an edge to the graph and store the weight as a log probability
+			pseudocount=pseudocount, group=group )
 
 	def add_transitions( self, a, b, probabilities=None, pseudocounts=None,
 		groups=None ):

@@ -1,4 +1,4 @@
-#! /usr/bin/env pythSo onon
+#! /usr/bin/env python
 """
 read-abf.py: A library for reading ABF files.
 
